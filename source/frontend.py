@@ -1,6 +1,7 @@
+import threading
+import os
 import tkinter as tk
 from tkinter import ttk, messagebox
-import threading
 from typing import Optional
 
 from backend import AdGuardVpnBackend, VpnLocation, VpnStatus
@@ -56,11 +57,13 @@ class VpnApplicationWindow:
         self.root.minsize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
         self.root.resizable(True, True)
         self.root.configure(padx=16, pady=16)
-        # Try to set a small icon if one is bundled
+
         try:
-            self.root.iconbitmap("adguard_vpn.ico")
-        except Exception:
-            pass
+            icon_path = os.path.expanduser("~/.local/share/icons/adguardvpn.png")
+            icon_image = tk.PhotoImage(file=icon_path)
+            self.root.iconphoto(True, icon_image)
+        except Exception as e:
+            print(f"[frontend] Could not load icon: {e}")
 
     # ------------------------------------------------------------------
     # Widget construction
