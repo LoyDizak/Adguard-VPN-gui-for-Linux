@@ -68,7 +68,7 @@ class VpnApplicationWindow:
         # Version / info label (right side of header)
         tk.Label(
             header,
-            text="Custom GUI for linux",
+            text="Vibecoded GUI for linux",
             font=T.FONT_SMALL,
             fg=T.TEXT_SECONDARY,
             bg=T.BG_BASE,
@@ -77,33 +77,46 @@ class VpnApplicationWindow:
         # Thin separator under header
         tk.Frame(self.root, bg=T.BORDER, height=1).pack(fill="x")
 
-        # ── Two-panel body ─────────────────────────────────────────────
-        body = tk.Frame(self.root, bg=T.BG_BASE)
-        body.pack(fill="both", expand=True)
+        # ── Two-panel body using grid for flexible layout ─────────────────
+        self._body = tk.Frame(self.root, bg=T.BG_BASE)
+        self._body.pack(fill="both", expand=True)
+        self._body.rowconfigure(0, weight=1)
+        self._body.columnconfigure(0, weight=3)  # left column: larger weight (shrinks first)
+        self._body.columnconfigure(1, weight=0)  # divider: fixed size
+        self._body.columnconfigure(2, weight=1)  # right column: smaller weight (shrinks last)
 
-        # Left (status) panel — fixed width
+        # Left (status) panel — resizable with minimum width
         self._status_panel = StatusPanel(
-            body,
+            self._body,
             on_connect=self._request_connect,
             on_disconnect=self._request_disconnect,
             width=T.PANEL_LEFT_W,
         )
-        self._status_panel.pack(side="left", fill="y", padx=(T.PAD, 0), pady=T.PAD)
+        self._status_panel.grid(
+            row=0, column=0, sticky="nsew",
+            padx=(T.PAD, 0), pady=T.PAD
+        )
 
         # Vertical divider
-        tk.Frame(body, bg=T.BORDER, width=1).pack(
-            side="left", fill="y", padx=(T.PAD, 0), pady=T.PAD
+        tk.Frame(self._body, bg=T.BORDER, width=1).grid(
+            row=0, column=1, sticky="ns",
+            padx=(T.PAD, 0), pady=T.PAD
         )
 
-        # Right (location) panel — fills remaining width
+        # Right (location) panel — resizable with minimum width
         self._location_panel = LocationPanel(
-            body,
+            self._body,
             on_location_selected=self._request_connect,
         )
-        self._location_panel.pack(
-            side="left", fill="both", expand=True,
-            padx=(0, T.PAD), pady=T.PAD,
+        self._location_panel.grid(
+            row=0, column=2, sticky="nsew",
+            padx=(0, T.PAD), pady=T.PAD
         )
+
+        # Bind window resize to enforce minimum column widths
+        self.root.bind("<Configure>", self._on_window_resize)
+        self._apply_column_widths()
+
 
     # ── Load locations ────────────────────────────────────────────────
 
