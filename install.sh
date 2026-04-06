@@ -7,17 +7,24 @@ APPS_DIR="$HOME/.local/share/applications"
 DESKTOP_DIR=$(xdg-user-dir DESKTOP)
 DESKTOP_FILE="$APPS_DIR/adguardvpn.desktop"
 
-# 1. Ask about CLI
-echo "AdGuard VPN CLI is required for this application to work. Do you want to install it? [y/n]"
-read -r answer
-
-CLI_INSTALLED=false
-
-if [[ "$answer" =~ ^[Yy]$ ]]; then
-    echo "Installing AdGuard VPN CLI..."
-    curl -fsSL https://raw.githubusercontent.com/AdguardTeam/AdGuardVPNCLI/master/scripts/release/install.sh | sh -s -- -v
-    rm -f adguardvpn-cli-*.tar.gz
+# 1. Check if adguardvpn-cli is already installed
+if command -v adguardvpn-cli &> /dev/null; then
     CLI_INSTALLED=true
+else
+    echo "AdGuard VPN CLI is required for this application to work. Do you want to install it? [y/n]"
+    read -r answer
+    
+    CLI_INSTALLED=false
+    
+    if [[ "$answer" =~ ^[Yy]$ ]]; then
+        echo "Installing AdGuard VPN CLI..."
+        curl -fsSL https://raw.githubusercontent.com/AdguardTeam/AdGuardVPNCLI/master/scripts/release/install.sh | sh -s -- -v
+        rm -f adguardvpn-cli-*.tar.gz
+        CLI_INSTALLED=true
+    else
+        echo "AdGuard VPN CLI is required. Exiting installation."
+        exit 1
+    fi
 fi
 
 echo "Installing GUI..."
@@ -50,12 +57,17 @@ chmod +x "$DESKTOP_DIR/adguardvpn.desktop"
 
 echo "Done!"
 
-# 6. Offer to log in only if CLI was installed
+# 6. Check login status and offer to log in only if not already logged in
 if [ "$CLI_INSTALLED" = true ]; then
-    echo "Do you want to log in to your account? (you can do this later with: adguardvpn-cli login) [y/n]"
-    read -r login_answer
-    if [[ "$login_answer" =~ ^[Yy]$ ]]; then
-        adguardvpn-cli login 
+    # Check if user is already authenticated by checking license info
+    if adguardvpn-cli license 2>/dev/null | grep -q "Logged in as"; then
+        :  # Already logged in, do nothing
+    else
+        echo "Do you want to log in to your account? (you can do this later with: adguardvpn-cli login) [y/n]"
+        read -r login_answer
+        if [[ "$login_answer" =~ ^[Yy]$ ]]; then
+            adguardvpn-cli login 
+        fi
     fi
 fi
 
